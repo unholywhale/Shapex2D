@@ -14,8 +14,8 @@ public class Vec2D {
     }
 
     public static int distance(Vec2D v1, Vec2D v2) {
-        double x = Math.abs(v1.x - v2.x);
-        double y = Math.abs(v1.y - v2.y);
+        double x = v1.x - v2.x;
+        double y = v1.y - v2.y;
         double result = Math.sqrt(x*x + y*y);
         return (int) result;
     }
@@ -24,11 +24,27 @@ public class Vec2D {
         return new Vec2D(this.x - v.x, this.y - v.y);
     }
 
-    public void normalize(int i) {
-        float length = (float) Math.sqrt(x*x + y*y);
-        float invLength = i / length;
-        x *= invLength;
-        y *= invLength;
+    public static Vec2D sum(Vec2D v1, Vec2D v2) {
+        Vec2D result = new Vec2D();
+        result.x = v1.x + v2.x;
+        result.y = v1.y + v2.y;
+        return result;
+    }
+
+    public Vec2D add(double i) {
+        return new Vec2D(x + i, y + i);
+    }
+
+    public void normalize(double i) {
+        double length = Math.sqrt(x*x + y*y);
+        double invLength = i / length;
+        this.x *= invLength;
+        this.y *= invLength;
+    }
+
+    @Override
+    public String toString() {
+        return "x:" + String.valueOf(this.x) + " y:" + String.valueOf(this.y);
     }
 
 }

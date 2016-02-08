@@ -7,12 +7,10 @@
     tools:context=".MainActivity"
     android:id="@+id/frame">
 
-
-    <com.whale.shapex2d.ShapexView
-        android:id="@+id/surface_view"
+    <com.whale.shapex2d.DrawView
+        android:id="@+id/draw_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
-
 
 
 </FrameLayout>

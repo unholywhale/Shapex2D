@@ -1,6 +1,7 @@
 package com.whale.shapex2d.entities;
 
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
@@ -18,14 +19,15 @@ import com.whale.shapex2d.interfaces.Movable;
  */
 public class RedPoint implements Movable {
 
+    public static final int SPEED = 10;
+
     ///////////////////////////////////////////////////////////////////////////
     // Declarations
     ///////////////////////////////////////////////////////////////////////////
-    public static final int POINT_RADIUS = 10;
+    public static final double POINT_RADIUS = 10;
     public static final int BOUNDARY = 0;
     private Vec2D mPosition;
-    private Vec2D mCenter;
-    private int mRadius;
+    private double mRadius;
     private Vec2D mVelocity;
     private Vec2D mNext;
     private Drawable mDrawable;
@@ -33,29 +35,28 @@ public class RedPoint implements Movable {
     private Context mContext;
 
     public RedPoint(Context context) {
-        init(context, 0, 0, 0, 0, POINT_RADIUS);
+        init(context, new Vec2D(0, 0), new Vec2D(0, 0), POINT_RADIUS);
     }
 
-    public RedPoint(Context context, int x, int y) {
-        init(context, x, y, 0, 0, POINT_RADIUS);
+    public RedPoint(Context context, Vec2D position) {
+        init(context, position, new Vec2D(0, 0), POINT_RADIUS);
     }
 
-    public RedPoint(Context context, int x, int y, int velX, int velY) {
-        init(context, x, y, velX, velY, POINT_RADIUS);
+    public RedPoint(Context context, Vec2D position, Vec2D velocity) {
+        init(context, position, velocity, POINT_RADIUS);
     }
 
-    public RedPoint(Context context, int x, int y, int velX, int velY, int radius) {
-        init(context, x, y, velX, velY, radius);
+    public RedPoint(Context context, Vec2D position, Vec2D velocity, double radius) {
+        init(context, position, velocity, radius);
     }
 
-    private void init(Context context, int x, int y, int velX, int velY, int radius) {
+    private void init(Context context, Vec2D position, Vec2D velocity, double radius) {
         mContext = context;
         mRadius = radius;
-        mPosition = new Vec2D(x, y);
-        mCenter = new Vec2D(x + radius, y + radius);
-        mVelocity = new Vec2D(velX, velY);
-        mNext = new Vec2D(mPosition.x + mVelocity.x, mPosition.y + mVelocity.y);
-        mDrawable = context.getResources().getDrawable(R.drawable.point);
+        mPosition = position;
+        mVelocity = velocity;
+        mNext = new Vec2D(position.x + velocity.x, position.y + velocity.y);
+        mDrawable = context.getResources().getDrawable(R.drawable.point_small);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -78,11 +79,11 @@ public class RedPoint implements Movable {
         return mNext;
     }
 
-    public int getRadius() {
+    public double getRadius() {
         return mRadius;
     }
 
-    public void setRadius(int mRadius) {
+    public void setRadius(double mRadius) {
         this.mRadius = mRadius;
     }
 
@@ -129,9 +130,9 @@ public class RedPoint implements Movable {
             return Boundaries.START;
         if (mNext.y <= BOUNDARY)
             return Boundaries.TOP;
-        if (mNext.x + mRadius > xBorder - BOUNDARY)
+        if (mNext.x + mRadius*2 > xBorder - BOUNDARY)
             return Boundaries.END;
-        if (mNext.y + mRadius > yBorder - BOUNDARY)
+        if (mNext.y + mRadius*2 > yBorder - BOUNDARY)
             return Boundaries.BOTTOM;
         return Boundaries.NONE;
     }
@@ -155,7 +156,12 @@ public class RedPoint implements Movable {
     public void draw(Canvas canvas) {
         move();
         deflect(getBoundary(canvas.getWidth(), canvas.getHeight()));
-        mDrawable.setBounds((int) mPosition.x, (int) mPosition.y, (int) mPosition.x + mRadius*2, (int) mPosition.y + mRadius*2);
+        int start = (int) (mPosition.x - mRadius);
+        int top = (int) (mPosition.y - mRadius);
+        int bottom = (int) (mPosition.y + mRadius);
+        int end = (int) (mPosition.x + mRadius);
+        mDrawable.setBounds(start, top, end, bottom);
+
         mDrawable.draw(canvas);
     }
 }
