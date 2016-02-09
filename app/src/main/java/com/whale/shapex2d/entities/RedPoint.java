@@ -1,5 +1,6 @@
 package com.whale.shapex2d.entities;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -25,7 +26,8 @@ public class RedPoint implements Movable {
     // Declarations
     ///////////////////////////////////////////////////////////////////////////
     public static final double POINT_RADIUS = 10;
-    public static final int BOUNDARY = 0;
+    public static final int BOUNDARY = 5;
+    private double mMass;
     private Vec2D mPosition;
     private double mRadius;
     private Vec2D mVelocity;
@@ -35,22 +37,27 @@ public class RedPoint implements Movable {
     private Context mContext;
 
     public RedPoint(Context context) {
-        init(context, new Vec2D(0, 0), new Vec2D(0, 0), POINT_RADIUS);
+        init(context, new Vec2D(0, 0), new Vec2D(0, 0), POINT_RADIUS, 10);
     }
 
     public RedPoint(Context context, Vec2D position) {
-        init(context, position, new Vec2D(0, 0), POINT_RADIUS);
+        init(context, position, new Vec2D(0, 0), POINT_RADIUS, 10);
+    }
+
+    public RedPoint(Context context, Vec2D position, Vec2D velocity, int mass) {
+        init(context, position, velocity, POINT_RADIUS, mass);
     }
 
     public RedPoint(Context context, Vec2D position, Vec2D velocity) {
-        init(context, position, velocity, POINT_RADIUS);
+        init(context, position, velocity, POINT_RADIUS, 10);
     }
 
     public RedPoint(Context context, Vec2D position, Vec2D velocity, double radius) {
-        init(context, position, velocity, radius);
+        init(context, position, velocity, radius, 10);
     }
 
-    private void init(Context context, Vec2D position, Vec2D velocity, double radius) {
+    private void init(Context context, Vec2D position, Vec2D velocity, double radius, double mass) {
+        mMass = mass;
         mContext = context;
         mRadius = radius;
         mPosition = position;
@@ -62,6 +69,11 @@ public class RedPoint implements Movable {
     ///////////////////////////////////////////////////////////////////////////
     // Getters and setters
     ///////////////////////////////////////////////////////////////////////////
+
+
+    public double getMass() {
+        return mMass;
+    }
 
     public void setVelocity(Vec2D velocity) {
         this.mVelocity = velocity;
@@ -130,9 +142,9 @@ public class RedPoint implements Movable {
             return Boundaries.START;
         if (mNext.y <= BOUNDARY)
             return Boundaries.TOP;
-        if (mNext.x + mRadius*2 > xBorder - BOUNDARY)
+        if (mNext.x + mRadius > xBorder - BOUNDARY)
             return Boundaries.END;
-        if (mNext.y + mRadius*2 > yBorder - BOUNDARY)
+        if (mNext.y + mRadius > yBorder - BOUNDARY)
             return Boundaries.BOTTOM;
         return Boundaries.NONE;
     }

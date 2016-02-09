@@ -1,6 +1,7 @@
 package com.whale.shapex2d;
 
 import android.content.Context;
+import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.AttributeSet;
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             @Override
             public void onGlobalLayout() {
                 mDrawView.start();
+                mDrawView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             }
         });
         mDrawView.setOnTouchListener(this);

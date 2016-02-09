@@ -11,6 +11,7 @@ public interface Movable {
     Vec2D getNextPos();
     Vec2D getPosition();
     Vec2D getVelocity();
+    double getMass();
     void setVelocity(Vec2D velocity);
     void setRadius(double r);
     double getRadius();

@@ -13,6 +13,10 @@ public class Vec2D {
     public Vec2D() {
     }
 
+    public double getLength() {
+        return Math.sqrt(x*x + y*y);
+    }
+
     public static int distance(Vec2D v1, Vec2D v2) {
         double x = v1.x - v2.x;
         double y = v1.y - v2.y;

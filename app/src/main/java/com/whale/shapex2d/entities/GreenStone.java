@@ -41,7 +41,7 @@ public class GreenStone implements Stationary {
         mContext = context;
         mPosition = position;
         mRadius = radius;
-        mDrawable = context.getResources().getDrawable(R.drawable.greenpoint_small);
+        mDrawable = context.getResources().getDrawable(R.drawable.greenpoint_small, null);
     }
 
     @Override
@@ -56,6 +56,14 @@ public class GreenStone implements Stationary {
 
     public void setGrowing(boolean isGrowing) {
         mGrowing = isGrowing;
+    }
+
+    public boolean isGrowing() {
+        return mGrowing;
+    }
+
+    public void die() {
+        mDrawable = mContext.getResources().getDrawable(R.drawable.point_small, null);
     }
 
     @Override
