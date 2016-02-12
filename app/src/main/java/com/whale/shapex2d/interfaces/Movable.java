@@ -17,6 +17,9 @@ public interface Movable {
     double getRadius();
     int move();
     int move(int velX, int velY);
+    void die();
+    boolean isDead();
+    boolean isDelete();
     boolean intersects(int x, int y);
     Boundaries getBoundary(int xBorder, int yBorder);
     void disappear();

@@ -17,6 +17,21 @@ public class Vec2D {
         return Math.sqrt(x*x + y*y);
     }
 
+    public static double getAngle(Vec2D v1, Vec2D v2) {
+        double dx = v1.x - v2.x;
+        double dy = v1.y - v2.y;
+        double inRads = Math.atan2(dy, dx);
+
+        double result = Math.toDegrees(inRads);
+        result-=90; // rotate counterclockwise 90 degrees;
+        return (result < 0) ? 360d + result : result;
+    }
+
+    public static Vec2D diff(Vec2D v1, Vec2D v2) {
+        Vec2D result = new Vec2D(v2.x - v1.x, v2.y - v1.y);
+        return result;
+    }
+
     public static int distance(Vec2D v1, Vec2D v2) {
         double x = v1.x - v2.x;
         double y = v1.y - v2.y;

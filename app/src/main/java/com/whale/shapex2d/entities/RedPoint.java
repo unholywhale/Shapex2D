@@ -1,19 +1,19 @@
 package com.whale.shapex2d.entities;
 
-import android.content.ContentValues;
 import android.content.Context;
-import android.graphics.BitmapFactory;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.PictureDrawable;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.OvalShape;
+import android.util.Log;
 
 import com.whale.shapex2d.R;
+import com.whale.shapex2d.animations.Animations;
 import com.whale.shapex2d.enums.Boundaries;
 import com.whale.shapex2d.geom.Vec2D;
 import com.whale.shapex2d.interfaces.Movable;
+
+import java.util.ArrayList;
 
 /**
  * Class for a simple red point
@@ -32,9 +32,13 @@ public class RedPoint implements Movable {
     private double mRadius;
     private Vec2D mVelocity;
     private Vec2D mNext;
+    private ArrayList<Drawable> mExplosionAnimation;
+    private int mAnimationCounter = 0;
     private Drawable mDrawable;
     private Paint mPaint;
     private Context mContext;
+    private boolean isDead = false;
+    private boolean isDelete = false;
 
     public RedPoint(Context context) {
         init(context, new Vec2D(0, 0), new Vec2D(0, 0), POINT_RADIUS, 10);
@@ -63,6 +67,11 @@ public class RedPoint implements Movable {
         mPosition = position;
         mVelocity = velocity;
         mNext = new Vec2D(position.x + velocity.x, position.y + velocity.y);
+        try {
+            mExplosionAnimation = Animations.INSTANCE.getAnimation(Animations.ANIM_EXPLOSION);
+        } catch (Resources.NotFoundException e) {
+            Log.e("ANIMATION",  "Animation " + Animations.ANIM_EXPLOSION + " not found");
+        }
         mDrawable = context.getResources().getDrawable(R.drawable.point_small);
     }
 
@@ -132,6 +141,21 @@ public class RedPoint implements Movable {
     }
 
     @Override
+    public void die() {
+        isDead = true;
+    }
+
+    @Override
+    public boolean isDead() {
+        return isDead;
+    }
+
+    @Override
+    public boolean isDelete() {
+        return isDelete;
+    }
+
+    @Override
     public boolean intersects(int x, int y) {
         return false;
     }
@@ -166,8 +190,18 @@ public class RedPoint implements Movable {
 
     @Override
     public void draw(Canvas canvas) {
-        move();
-        deflect(getBoundary(canvas.getWidth(), canvas.getHeight()));
+        if (!isDead) {
+            move();
+            deflect(getBoundary(canvas.getWidth(), canvas.getHeight()));
+        } else {
+            if (mAnimationCounter < mExplosionAnimation.size()) {
+                mDrawable = mExplosionAnimation.get(mAnimationCounter);
+                mRadius = 30;
+                mAnimationCounter++;
+            } else {
+                isDelete = true;
+            }
+        }
         int start = (int) (mPosition.x - mRadius);
         int top = (int) (mPosition.y - mRadius);
         int bottom = (int) (mPosition.y + mRadius);

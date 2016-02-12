@@ -16,7 +16,6 @@ import com.whale.shapex2d.geom.Vec2D;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
-    private ShapexView mSurfaceView;
     private DrawView mDrawView;
 
     @Override
@@ -32,7 +31,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 mDrawView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             }
         });
-        mDrawView.setOnTouchListener(this);
+        //mDrawView.setOnTouchListener(this);
 //        mSurfaceView = (ShapexView) findViewById(R.id.surface_view);
 //        mSurfaceView.setOnTouchListener(this);
 //        mSurfaceView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
