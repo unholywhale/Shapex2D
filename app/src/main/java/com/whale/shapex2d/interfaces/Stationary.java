@@ -1,7 +1,7 @@
 package com.whale.shapex2d.interfaces;
 
 import android.graphics.Canvas;
-import android.view.MotionEvent;
+import android.support.annotation.Nullable;
 
 import com.whale.shapex2d.geom.Vec2D;
 
@@ -9,12 +9,14 @@ import com.whale.shapex2d.geom.Vec2D;
  * For stationary objects
  */
 public interface Stationary {
-    void hit();
-    boolean isDelete();
-    void die();
-    void cancel();
     Vec2D getPosition();
     double getRadius();
-    void draw(Canvas canvas, Vec2D currentTouch);
+    boolean isDelete();
+    void cancel();
+    void action(Vec2D position);
+    Moving shoot();
+    void hit();
+    void die();
+    void draw(Canvas canvas, @Nullable Vec2D currentTouch);
     void draw(Canvas canvas);
 }

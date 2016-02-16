@@ -11,21 +11,22 @@ import com.whale.shapex2d.R;
 import com.whale.shapex2d.animations.Animations;
 import com.whale.shapex2d.enums.Boundaries;
 import com.whale.shapex2d.geom.Vec2D;
-import com.whale.shapex2d.interfaces.Movable;
+import com.whale.shapex2d.interfaces.Enemy;
+import com.whale.shapex2d.interfaces.Moving;
 
 import java.util.ArrayList;
 
 /**
  * Class for a simple red point
  */
-public class RedPoint implements Movable {
+public class RedPoint implements Moving, Enemy {
 
     public static final int SPEED = 10;
 
     ///////////////////////////////////////////////////////////////////////////
     // Declarations
     ///////////////////////////////////////////////////////////////////////////
-    public static final double POINT_RADIUS = 10;
+    public static final double POINT_RADIUS = 15;
     public static final int BOUNDARY = 5;
     private double mMass;
     private Vec2D mPosition;
@@ -78,7 +79,6 @@ public class RedPoint implements Movable {
     ///////////////////////////////////////////////////////////////////////////
     // Getters and setters
     ///////////////////////////////////////////////////////////////////////////
-
 
     public double getMass() {
         return mMass;
@@ -135,9 +135,13 @@ public class RedPoint implements Movable {
     }
 
     @Override
-    public int move(int velX, int velY) {
-        mPosition = mNext;
-        return 0;
+    public void hit() {
+        die();
+    }
+
+    @Override
+    public void hit(double dmg) {
+        die();
     }
 
     @Override
@@ -155,13 +159,7 @@ public class RedPoint implements Movable {
         return isDelete;
     }
 
-    @Override
-    public boolean intersects(int x, int y) {
-        return false;
-    }
-
-    @Override
-    public Boundaries getBoundary(int xBorder, int yBorder) {
+    public Boundaries  getBoundary(int xBorder, int yBorder) {
         if (mNext.x <= BOUNDARY)
             return Boundaries.START;
         if (mNext.y <= BOUNDARY)
@@ -173,18 +171,23 @@ public class RedPoint implements Movable {
         return Boundaries.NONE;
     }
 
-    @Override
-    public void disappear() {
-
-    }
-
     public void deflect(Boundaries b) {
-        if (b == Boundaries.TOP || b == Boundaries.BOTTOM) {
+        if (b == Boundaries.TOP) {// || b == Boundaries.BOTTOM) {
             mVelocity.y = -mVelocity.y;
             mNext.y += mVelocity.y;
         } else if (b == Boundaries.START || b == Boundaries.END) {
             mVelocity.x = -mVelocity.x;
             mNext.x += mVelocity.x;
+        }
+    }
+
+    public void animateExplosion() {
+        if (mAnimationCounter < mExplosionAnimation.size()) {
+            mDrawable = mExplosionAnimation.get(mAnimationCounter);
+            mRadius = 60;
+            mAnimationCounter++;
+        } else {
+            isDelete = true;
         }
     }
 
@@ -194,13 +197,7 @@ public class RedPoint implements Movable {
             move();
             deflect(getBoundary(canvas.getWidth(), canvas.getHeight()));
         } else {
-            if (mAnimationCounter < mExplosionAnimation.size()) {
-                mDrawable = mExplosionAnimation.get(mAnimationCounter);
-                mRadius = 30;
-                mAnimationCounter++;
-            } else {
-                isDelete = true;
-            }
+            animateExplosion();
         }
         int start = (int) (mPosition.x - mRadius);
         int top = (int) (mPosition.y - mRadius);

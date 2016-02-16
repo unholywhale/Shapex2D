@@ -7,7 +7,7 @@ import com.whale.shapex2d.geom.Vec2D;
 /**
  * For movable objects on the screen
  */
-public interface Movable {
+public interface Moving {
     Vec2D getNextPos();
     Vec2D getPosition();
     Vec2D getVelocity();
@@ -16,12 +16,10 @@ public interface Movable {
     void setRadius(double r);
     double getRadius();
     int move();
-    int move(int velX, int velY);
+    void hit();
+    void hit(double dmg);
     void die();
     boolean isDead();
     boolean isDelete();
-    boolean intersects(int x, int y);
-    Boundaries getBoundary(int xBorder, int yBorder);
-    void disappear();
     void draw(Canvas canvas);
 }

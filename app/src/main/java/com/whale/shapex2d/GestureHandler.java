@@ -30,7 +30,7 @@ public class GestureHandler extends GestureDetector.SimpleOnGestureListener {
     @Override
     public boolean onDoubleTap(MotionEvent e) {
         mView.start();
-        return super.onDoubleTap(e);
+        return false;
     }
 
     @Override
