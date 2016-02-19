@@ -4,21 +4,31 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
+import android.util.Log;
 
 import com.whale.shapex2d.R;
 import com.whale.shapex2d.animations.Animations;
 import com.whale.shapex2d.geom.Vec2D;
 import com.whale.shapex2d.interfaces.Enemy;
+import com.whale.shapex2d.interfaces.Entity;
 import com.whale.shapex2d.interfaces.Moving;
+import com.whale.shapex2d.interfaces.Projectile;
+import com.whale.shapex2d.interfaces.Sensors;
+import com.whale.shapex2d.strategies.StandardEnemyStrategy;
 
 import java.util.ArrayList;
 
 /**
  * Enemy tank class
  */
-public class Tank implements Enemy, Moving {
+public class Tank implements Moving, Enemy, Sensors {
     public static final int TANK_HEALTH = 20;
     public static final double TANK_RADIUS = 70;
+    private final SensorsTask mTask;
+    public ArrayList<Entity> mSensorObjects;
+    private Entity mSelf = this;
+    private Entity mSensorTarget;
     private Vec2D mPosition;
     private Vec2D mNext;
     private Vec2D mVelocity;
@@ -31,7 +41,7 @@ public class Tank implements Enemy, Moving {
     private Drawable mDrawable;
     private ArrayList<Drawable> mAnimation;
     private int mAnimationCounter = 0;
-    private float mGunAngle = 180;
+    private double mGunAngle = 180;
     private boolean isDead;
     private boolean isDelete;
 
@@ -47,6 +57,8 @@ public class Tank implements Enemy, Moving {
         mChassisDrawable = res.getDrawable(R.drawable.chassis_1);
         mBaseDrawable = res.getDrawable(R.drawable.tankbase_1);
         mGunDrawable = res.getDrawable(R.drawable.tankgun_1);
+        mTask = new SensorsTask();
+        mTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     @Override
@@ -107,6 +119,7 @@ public class Tank implements Enemy, Moving {
     @Override
     public void die() {
         isDead = true;
+        mTask.cancel(true);
     }
 
     @Override
@@ -119,9 +132,21 @@ public class Tank implements Enemy, Moving {
         return isDelete;
     }
 
+    private void aimAtTarget() {
+        if (mSensorTarget != null) {
+            double angle = Vec2D.getAngle(mPosition, mSensorTarget.getPosition());
+            if (angle < mGunAngle) {
+                mGunAngle--;
+            } else if (angle > mGunAngle) {
+                mGunAngle++;
+            }
+        }
+    }
+
     public void draw(Canvas canvas) {
         if (!isDead) {
             move();
+            aimAtTarget();
             drawTank(canvas);
         } else {
             drawExplosion(canvas);
@@ -137,7 +162,7 @@ public class Tank implements Enemy, Moving {
         mBaseDrawable.setBounds(x - r, y - r, x + r, y + r);
         mBaseDrawable.draw(canvas);
         canvas.save();
-        canvas.rotate(mGunAngle, x, y);
+        canvas.rotate((float) mGunAngle, x, y);
         mGunDrawable.setBounds(x - r, y - r, x + r, y + r);
         mGunDrawable.draw(canvas);
         canvas.restore();
@@ -157,5 +182,47 @@ public class Tank implements Enemy, Moving {
         int r = (int) mRadius;
         mDrawable.setBounds(x - r, y - r, x + r, y + r);
         mDrawable.draw(canvas);
+    }
+
+    @Override
+    public void setSensors(ArrayList<Entity> objects) {
+        if (objects != mSensorObjects) {
+            mSensorObjects = objects;
+        }
+    }
+
+    private class SensorsTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            while (!this.isCancelled()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Log.e("SENSORS", "INTERRUPTED");
+                    e.printStackTrace();
+                }
+                publishProgress();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+            updateTarget();
+        }
+
+        private void updateTarget() {
+            if (mSensorObjects == null) {
+                return;
+            }
+            mSensorTarget = StandardEnemyStrategy.getTarget(mSensorObjects, mSelf);
+        }
     }
 }

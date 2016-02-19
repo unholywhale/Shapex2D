@@ -2,6 +2,7 @@ package com.whale.shapex2d.geom;
 
 import android.util.Log;
 
+import com.whale.shapex2d.interfaces.Entity;
 import com.whale.shapex2d.interfaces.Moving;
 import com.whale.shapex2d.interfaces.Stationary;
 
@@ -9,6 +10,11 @@ public class Collision {
     public Vec2D mContactVector;
     public Vec2D newV1, newV2;
     public Vec2D mDelta = new Vec2D();
+
+    public static boolean hasCollision(Moving m, Entity e) {
+        double distance = Vec2D.distance(m.getNextPos(), e.getNextPos()) - m.getRadius() - e.getRadius();
+        return distance <= 0;
+    }
 
     public static boolean hasCollision(Moving m1, Moving m2) {
         double distance = Vec2D.distance(m1.getNextPos(), m2.getNextPos()) - m1.getRadius() - m2.getRadius();
@@ -18,6 +24,12 @@ public class Collision {
     public static boolean hasCollision(Moving m1, Stationary s1) {
         double distance = Vec2D.distance(m1.getNextPos(), s1.getPosition()) - m1.getRadius() - s1.getRadius();
         return distance <= 0;
+    }
+
+    public static Vec2D getContactVector(Entity e1, Entity e2) {
+        Vec2D contact = e1.getPosition().subtract(e2.getPosition());
+        contact.normalize(1);
+        return contact;
     }
 
     public static Vec2D getContactVector(Moving m1, Moving m2) {
@@ -32,6 +44,12 @@ public class Collision {
         return contact;
     }
 
+    public void setData(Entity e1, Entity e2, Vec2D contactVector) {
+        this.mContactVector = contactVector;
+        double magnitude = getMagnitude(e1, e2);
+        this.newV1 = getNewVelocity(e1, false, magnitude);
+        this.newV2 = getNewVelocity(e2, true, magnitude);
+    }
 
     public void setData(Moving m1, Moving m2, Vec2D contactVector) {
         this.mContactVector = contactVector;
@@ -47,6 +65,13 @@ public class Collision {
         this.newV2 = new Vec2D(0,0);
     }
 
+    public double getMagnitude(Entity e1, Entity e2) {
+        double a1 = getA(e1);
+        double a2 = getA(e2);
+        double value = 2 * e1.getMass() * e2.getMass() * (a1 - a2) / (e1.getMass() + e2.getMass());
+        return Math.abs(value);
+    }
+
     public double getMagnitude(Moving m1, Moving m2) {
         double a1 = getA(m1);
         double a2 = getA(m2);
@@ -60,8 +85,30 @@ public class Collision {
         return Math.abs(value);
     }
 
+    public double getA(Entity e) {
+        return e.getVelocity().x * mContactVector.x + e.getVelocity().y * mContactVector.y;
+    }
+
     public double getA(Moving m) {
         return m.getVelocity().x * mContactVector.x + m.getVelocity().y * mContactVector.y;
+    }
+
+    private Vec2D getNewVelocity(Entity e, boolean negative, double magnitude) {
+        if (e.getMass() == Integer.MAX_VALUE) { // max mass, always stationary
+            return new Vec2D(0, 0);
+        }
+        Vec2D velocity = e.getVelocity();
+        Vec2D newVelocity = new Vec2D();
+        int sign = 1;
+        if (negative) {
+            sign = -1;
+        }
+        mDelta.x = mContactVector.x;
+        mDelta.y = mContactVector.y;
+        mDelta.normalize(magnitude / e.getMass());
+        newVelocity.x = velocity.x + (sign * mDelta.x);
+        newVelocity.y = velocity.y + (sign * mDelta.y);
+        return newVelocity;
     }
 
     private Vec2D getNewStatVec(Moving m, double magnitude) {

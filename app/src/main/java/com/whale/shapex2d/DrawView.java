@@ -20,10 +20,13 @@ import com.whale.shapex2d.entities.Tower;
 import com.whale.shapex2d.entities.RedPoint;
 import com.whale.shapex2d.geom.Collision;
 import com.whale.shapex2d.geom.Vec2D;
+import com.whale.shapex2d.interfaces.Entity;
 import com.whale.shapex2d.interfaces.Moving;
+import com.whale.shapex2d.interfaces.Sensors;
 import com.whale.shapex2d.interfaces.Stationary;
-import com.whale.shapex2d.interfaces.Weapon;
+import com.whale.shapex2d.interfaces.Projectile;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.ListIterator;
@@ -33,6 +36,8 @@ import java.util.ListIterator;
  */
 public class DrawView extends View implements View.OnTouchListener {
 
+    private ArrayList<Entity> mObjects = new ArrayList<>();
+    private ArrayList<Entity> mAddObjects = new ArrayList<>();
     private ArrayList<Moving> movingObjects = new ArrayList<>();
     private ArrayList<Stationary> stationaryObjects = new ArrayList<>();
     private Base mBase;
@@ -89,6 +94,7 @@ public class DrawView extends View implements View.OnTouchListener {
         clearField();
         mRemaining = 20;
         mBase = new Base(mContext, new Vec2D(getWidth()/2, getHeight()+1300), 1400);
+        mObjects.add(mBase);
         stationaryObjects.add(mBase);
         //prepareFieldGrid();
         new AddEnemyTask().execute();
@@ -124,6 +130,7 @@ public class DrawView extends View implements View.OnTouchListener {
     private void clearField() {
         mCompleted.clear();
         fieldCells.clear();
+        mObjects.clear();
         movingObjects.clear();
         stationaryObjects.clear();
     }
@@ -196,6 +203,7 @@ public class DrawView extends View implements View.OnTouchListener {
     ///////////////////////////////////////////////////////////////////////////
     public RedPoint addRedPoint(Vec2D position, Vec2D velocity, int mass) {
         RedPoint redPoint = new RedPoint(mContext, position, velocity, mass);
+        mObjects.add(redPoint);
         movingObjects.add(redPoint);
         return redPoint;
     }
@@ -211,12 +219,15 @@ public class DrawView extends View implements View.OnTouchListener {
             }
         }
         Tower tower = new Tower(mContext, position);
+        mObjects.add(tower);
         stationaryObjects.add(tower);
         return tower;
     }
 
     public Tank addTank(Vec2D position, Vec2D velocity) {
         Tank tank = new Tank(mContext, position, velocity);
+        tank.setSensors(mObjects);
+        mObjects.add(tank);
         movingObjects.add(tank);
         return tank;
     }
@@ -227,13 +238,13 @@ public class DrawView extends View implements View.OnTouchListener {
     private Paint textPaint = new Paint();
     private Paint linePaint = new Paint();
     private long mFrameTime = 0;
+
     public static final long FRAME_TIME = 15;
     @Override
     protected void onDraw(Canvas canvas) {
         if (mFrameTime == 0) {
             mFrameTime = System.currentTimeMillis();
         }
-//        canvas.drawColor(Color.WHITE);
         canvas.drawBitmap(bgBitmap, 0, 0, null);
 
         if (mBase.getHealth() <= 0) {
@@ -241,9 +252,7 @@ public class DrawView extends View implements View.OnTouchListener {
         }
         prepareObjects();
 
-        drawStationary(canvas);
-        drawMovable(canvas);
-        //drawAim(canvas);
+        drawObjects(canvas);
         drawInfo(canvas);
 
         waitFrame();
@@ -253,11 +262,68 @@ public class DrawView extends View implements View.OnTouchListener {
         }
     }
 
-    private boolean isAtBoundary(Moving m) {
-        if (m.getNextPos().y + m.getRadius() >= getHeight()) {
-            return true;
+    private void drawObjects(Canvas canvas) {
+        for (Entity e : mObjects) {
+            if (e instanceof Moving) {
+                drawMoving((Moving) e, canvas);
+            }
+            if (e instanceof Stationary) {
+                drawStationary((Stationary) e, canvas);
+            }
         }
-        return false;
+    }
+
+    private void prepareObjects() {
+        ListIterator<Entity> iterator = mObjects.listIterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().isDelete()) {
+                iterator.remove();
+            }
+        }
+        mObjects.addAll(mAddObjects);
+        mAddObjects.clear();
+    }
+
+    private void drawMoving(Moving m, Canvas canvas) {
+        if (!m.isDead()) {
+            for (Entity e : mObjects) {
+                if (e.equals(m)) {
+                    continue;
+                }
+                if (e.isDead()) {
+                    continue;
+                }
+                if (!Collision.hasCollision(m, e)) {
+                    continue;
+                }
+                if (m instanceof Projectile || e instanceof Projectile) {
+                    m.hit();
+                    e.hit();
+                }
+                Vec2D contactVector = Collision.getContactVector(m, e);
+                collision.setData(m, e, contactVector);
+                m.setVelocity(collision.newV1);
+                e.setVelocity(collision.newV2);
+            }
+        }
+        m.draw(canvas);
+    }
+
+    private void drawStationary(Stationary s, Canvas canvas) {
+        Moving m = s.shoot();
+        if (m != null) {
+            mAddObjects.add(m);
+        }
+        s.draw(canvas, mCurrentTouch);
+        if (s == mCurrentObject) {
+            linePaint.setColor(Color.YELLOW);
+            linePaint.setStrokeWidth(10);
+            linePaint.setStyle(Paint.Style.STROKE);
+            float x = (float) s.getPosition().x;
+            float y = (float) s.getPosition().y;
+            float r = (float) s.getRadius() + 10;
+            canvas.drawCircle(x, y, r, linePaint);
+        }
     }
 
     private void waitFrame() {
@@ -271,101 +337,8 @@ public class DrawView extends View implements View.OnTouchListener {
         }
     }
 
-    private void prepareObjects() {
-        ListIterator<Moving> iterator = movingObjects.listIterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().isDelete()) {
-                iterator.remove();
-            }
-        }
-        ListIterator<Stationary> stIterator = stationaryObjects.listIterator();
-        while (stIterator.hasNext()) {
-            if (stIterator.next().isDelete()) {
-                stIterator.remove();
-            }
-        }
-    }
-
-    private void drawMovable(Canvas canvas) {
-        Moving m1;
-        Moving m2;
-        Stationary s1;
-        mEnergy = 0;
-        double length;
-        for (int i = 0; i < movingObjects.size(); i++) {
-            m1 = movingObjects.get(i);
-//            length = m1.getVelocity().getLength();
-//            mEnergy += (m1.getMass() * length*length) / 2;
-            for (int j = i + 1; j < movingObjects.size(); j++) { // handle collisions with movable
-                m2 = movingObjects.get(j);
-                if (m2.isDead()) {
-                    continue;
-                }
-                if (!Collision.hasCollision(m1, m2)) {
-                    continue;
-                }
-                if (m1 instanceof Weapon || m2 instanceof Weapon) {
-                    m1.hit();
-                    m2.hit();
-                }
-                Vec2D contactVector = Collision.getContactVector(m1, m2);
-                collision.setData(m1, m2, contactVector);
-                m1.setVelocity(collision.newV1);
-                m2.setVelocity(collision.newV2);
-            }
-            for (int k = 0; k < stationaryObjects.size(); k++) { // handle collisions with stationary
-                s1 = stationaryObjects.get(k);
-                if (!Collision.hasCollision(m1, s1)) {
-                    continue;
-                }
-//                if (s1.isVulnerable()) {
-//                    s1.die();
-//                    mStop = true;
-//                    isDown = false;
-//                }
-                if (!m1.isDead()) {
-                    s1.hit();
-                    m1.hit();
-                }
-                if (!m1.isDead()) {
-                    Vec2D contactVector = Collision.getContactVector(m1, s1);
-                    collision.setData(m1, contactVector);
-                    m1.setVelocity(collision.newV1);
-                }
-            }
-            m1.draw(canvas);
-        }
-    }
-
-    private void drawStationary(Canvas canvas) {
-        for (Stationary s : stationaryObjects) { // draw stationary
-            Moving b = s.shoot();
-            if (b != null) {
-                movingObjects.add(b);
-            }
-            s.draw(canvas, mCurrentTouch);
-            if (s == mCurrentObject) {
-                linePaint.setColor(Color.YELLOW);
-                linePaint.setStrokeWidth(10);
-                linePaint.setStyle(Paint.Style.STROKE);
-                float x = (float) s.getPosition().x;
-                float y = (float) s.getPosition().y;
-                float r = (float) s.getRadius() + 10;
-                canvas.drawCircle(x, y, r, linePaint);
-            }
-        }
-    }
-
     private void drawInfo(Canvas canvas) {
         textPaint.setTextSize(32);
-//        canvas.drawText("ENERGY:" + String.valueOf(mEnergy), 50, 50, textPaint);
-//        try {
-//            double fSize = fieldCells.size();
-//            double cSize = mCompleted.size();
-//            mPercCompleted = (int) (100 / (fSize / cSize));
-//        } catch (ArithmeticException s) {
-//            mPercCompleted = 0;
-//        }
         canvas.drawText("HEALTH: " + String.valueOf(mBase.getHealth()), 800, 50, textPaint);
     }
 

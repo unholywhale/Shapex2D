@@ -7,7 +7,7 @@ import com.whale.shapex2d.geom.Vec2D;
 /**
  * For movable objects on the screen
  */
-public interface Moving {
+public interface Moving extends Entity {
     Vec2D getNextPos();
     Vec2D getPosition();
     Vec2D getVelocity();

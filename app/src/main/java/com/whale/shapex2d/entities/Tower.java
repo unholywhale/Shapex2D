@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.support.annotation.IntegerRes;
 import android.support.annotation.Nullable;
 
 import com.whale.shapex2d.R;
@@ -27,6 +28,7 @@ public class Tower implements Stationary {
     private boolean isDead = false;
     //private boolean isVulnerable = true;
     private int mHealth = TOWER_HEALTH;
+    private double mMass;
     private Vec2D mPosition;
     private double mRadius;
     private Context mContext;
@@ -62,6 +64,7 @@ public class Tower implements Stationary {
         mContext = context;
         mPosition = position;
         mRadius = radius;
+        mMass = Integer.MAX_VALUE;
         mAnimation = Animations.INSTANCE.getAnimation(Animations.ANIM_CIRCLE_EXPLOSION);
         mDrawable = getResourceDrawable(R.drawable.graycircle);
         mPlatformDrawable = context.getResources().getDrawable(PLATFORM_IMG);
@@ -86,6 +89,15 @@ public class Tower implements Stationary {
         return mPosition;
     }
 
+    @Override
+    public Vec2D getVelocity() {
+        return new Vec2D(0, 0);
+    }
+
+    @Override
+    public double getMass() {
+        return mMass;
+    }
 
 
     @Override
@@ -94,16 +106,36 @@ public class Tower implements Stationary {
     }
 
     @Override
+    public void setVelocity(Vec2D velocity) {
+        // do nothing
+    }
+
+    @Override
     public boolean isDelete() {
         return isDelete;
     }
 
     @Override
+    public boolean isDead() {
+        return isDead;
+    }
+
+    @Override
     public void hit() {
-        mHealth--;
-        if (mHealth == 0) {
+        hit(1);
+    }
+
+    @Override
+    public void hit(double dmg) {
+        mHealth -= dmg;
+        if (mHealth <= 0) {
             die();
         }
+    }
+
+    @Override
+    public Vec2D getNextPos() {
+        return mPosition;
     }
 
     private Vec2D getAmmoPosition() {

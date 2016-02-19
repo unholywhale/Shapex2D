@@ -43,8 +43,23 @@ public class Base implements Stationary {
     }
 
     @Override
+    public Vec2D getVelocity() {
+        return new Vec2D(0, 0);
+    }
+
+    @Override
+    public double getMass() {
+        return mMass;
+    }
+
+    @Override
     public double getRadius() {
         return mRadius;
+    }
+
+    @Override
+    public void setVelocity(Vec2D velocity) {
+        // do nothing
     }
 
     public int getHealth() {
@@ -72,11 +87,26 @@ public class Base implements Stationary {
     }
 
     @Override
+    public boolean isDead() {
+        return isDead;
+    }
+
+    @Override
     public void hit() {
-        mHealth--;
-        if (mHealth == 0) {
+        hit(1);
+    }
+
+    @Override
+    public void hit(double dmg) {
+        mHealth -= dmg;
+        if (mHealth <= 0) {
             die();
         }
+    }
+
+    @Override
+    public Vec2D getNextPos() {
+        return mPosition;
     }
 
     @Override

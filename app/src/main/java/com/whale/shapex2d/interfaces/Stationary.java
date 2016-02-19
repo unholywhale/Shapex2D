@@ -8,7 +8,7 @@ import com.whale.shapex2d.geom.Vec2D;
 /**
  * For stationary objects
  */
-public interface Stationary {
+public interface Stationary extends Entity {
     Vec2D getPosition();
     double getRadius();
     boolean isDelete();
