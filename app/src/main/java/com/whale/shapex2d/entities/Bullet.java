@@ -10,6 +10,7 @@ import android.util.Log;
 import com.whale.shapex2d.R;
 import com.whale.shapex2d.animations.Animations;
 import com.whale.shapex2d.geom.Vec2D;
+import com.whale.shapex2d.interfaces.Entity;
 import com.whale.shapex2d.interfaces.Moving;
 import com.whale.shapex2d.interfaces.Projectile;
 
@@ -18,7 +19,7 @@ import java.util.ArrayList;
 /**
  * A bullet object
  */
-public class Bullet implements Moving, Projectile {
+public class Bullet implements Entity, Projectile {
     ///////////////////////////////////////////////////////////////////////////
     // Declarations
     ///////////////////////////////////////////////////////////////////////////
@@ -104,8 +105,19 @@ public class Bullet implements Moving, Projectile {
     }
 
     @Override
+    public ArrayList<Entity> shoot() {
+        // do nothing
+        return null;
+    }
+
+    @Override
     public void setRadius(double r) {
         mRadius = r;
+    }
+
+    @Override
+    public boolean isStationary() {
+        return false;
     }
 
     @Override

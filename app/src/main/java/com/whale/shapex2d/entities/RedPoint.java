@@ -12,6 +12,7 @@ import com.whale.shapex2d.animations.Animations;
 import com.whale.shapex2d.enums.Boundaries;
 import com.whale.shapex2d.geom.Vec2D;
 import com.whale.shapex2d.interfaces.Enemy;
+import com.whale.shapex2d.interfaces.Entity;
 import com.whale.shapex2d.interfaces.Moving;
 
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 /**
  * Class for a simple red point
  */
-public class RedPoint implements Moving, Enemy {
+public class RedPoint implements Entity, Enemy {
 
     public static final int SPEED = 10;
 
@@ -106,6 +107,11 @@ public class RedPoint implements Moving, Enemy {
 
     public void setRadius(double mRadius) {
         this.mRadius = mRadius;
+    }
+
+    @Override
+    public boolean isStationary() {
+        return false;
     }
 
     public Drawable getmDrawable() {
@@ -206,5 +212,11 @@ public class RedPoint implements Moving, Enemy {
         mDrawable.setBounds(start, top, end, bottom);
 
         mDrawable.draw(canvas);
+    }
+
+    @Override
+    public ArrayList<Entity> shoot() {
+        // do nothing
+        return null;
     }
 }

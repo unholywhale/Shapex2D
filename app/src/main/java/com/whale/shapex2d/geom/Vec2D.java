@@ -17,6 +17,26 @@ public class Vec2D {
         return Math.sqrt(x*x + y*y);
     }
 
+    public static Vec2D rotate(Vec2D init, Vec2D vec, double angle) {
+        Vec2D newVec = diff(init, vec);
+        double x = newVec.x;
+        double y = newVec.y;
+        angle = Math.toRadians(angle);
+        newVec.x = x * Math.cos(angle) - y * Math.sin(angle);
+        newVec.y = x * Math.sin(angle) + y * Math.cos(angle);
+        return sum(init, newVec);
+    }
+
+    public void rotate(Vec2D init, double angle) {
+        Vec2D newVec = diff(init, this);
+        double x = newVec.x;
+        double y = newVec.y;
+        angle = Math.toRadians(angle);
+        this.x = x * Math.cos(angle) - y * Math.sin(angle) + init.x;
+        this.y = x * Math.sin(angle) + y * Math.cos(angle) + init.y;
+
+    }
+
     public static double getAngle(Vec2D v1, Vec2D v2) {
         double dx = v1.x - v2.x;
         double dy = v1.y - v2.y;

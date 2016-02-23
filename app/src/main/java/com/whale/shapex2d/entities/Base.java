@@ -7,19 +7,24 @@ import android.support.annotation.Nullable;
 
 import com.whale.shapex2d.R;
 import com.whale.shapex2d.geom.Vec2D;
+import com.whale.shapex2d.interfaces.Entity;
+import com.whale.shapex2d.interfaces.Friend;
 import com.whale.shapex2d.interfaces.Moving;
 import com.whale.shapex2d.interfaces.Stationary;
+
+import java.util.ArrayList;
 
 /**
  * Game base object
  */
-public class Base implements Stationary {
+public class Base implements Entity, Friend {
     public static final int BASE_HEALTH = 100;
     private Context mContext;
     private Drawable mDrawable;
     private Vec2D mPosition;
     private double mMass;
     private double mRadius;
+
     private int mHealth;
     private Vec2D mGunPosition;
     private boolean isDead;
@@ -58,6 +63,22 @@ public class Base implements Stationary {
     }
 
     @Override
+    public void setRadius(double r) {
+        mRadius = r;
+    }
+
+    @Override
+    public boolean isStationary() {
+        return true;
+    }
+
+    @Override
+    public int move() {
+        // do nothing
+        return 0;
+    }
+
+    @Override
     public void setVelocity(Vec2D velocity) {
         // do nothing
     }
@@ -72,17 +93,17 @@ public class Base implements Stationary {
     }
 
     @Override
-    public void cancel() {
-
-    }
-
-    @Override
     public void action(Vec2D position) {
 
     }
 
     @Override
-    public Moving shoot() {
+    public boolean isCharged() {
+        return false;
+    }
+
+    @Override
+    public ArrayList<Entity> shoot() {
         return null;
     }
 
@@ -113,11 +134,6 @@ public class Base implements Stationary {
     public void die() {
         mDrawable = mContext.getResources().getDrawable(R.drawable.point_small);
         isDead = true;
-    }
-
-    @Override
-    public void draw(Canvas canvas, @Nullable Vec2D currentTouch) {
-        draw(canvas);
     }
 
     @Override

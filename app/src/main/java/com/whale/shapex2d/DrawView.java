@@ -15,18 +15,21 @@ import android.view.View;
 
 import com.whale.shapex2d.animations.Animations;
 import com.whale.shapex2d.entities.Base;
+import com.whale.shapex2d.entities.Laser;
+import com.whale.shapex2d.entities.LaserTower;
 import com.whale.shapex2d.entities.Tank;
-import com.whale.shapex2d.entities.Tower;
+import com.whale.shapex2d.entities.GunTower;
 import com.whale.shapex2d.entities.RedPoint;
 import com.whale.shapex2d.geom.Collision;
 import com.whale.shapex2d.geom.Vec2D;
 import com.whale.shapex2d.interfaces.Entity;
+import com.whale.shapex2d.interfaces.Friend;
 import com.whale.shapex2d.interfaces.Moving;
 import com.whale.shapex2d.interfaces.Sensors;
-import com.whale.shapex2d.interfaces.Stationary;
 import com.whale.shapex2d.interfaces.Projectile;
+import com.whale.shapex2d.interfaces.Weapon;
+import com.whale.shapex2d.strategies.StandardEnemyStrategy;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.ListIterator;
@@ -38,10 +41,8 @@ public class DrawView extends View implements View.OnTouchListener {
 
     private ArrayList<Entity> mObjects = new ArrayList<>();
     private ArrayList<Entity> mAddObjects = new ArrayList<>();
-    private ArrayList<Moving> movingObjects = new ArrayList<>();
-    private ArrayList<Stationary> stationaryObjects = new ArrayList<>();
     private Base mBase;
-    private Stationary mCurrentObject;
+    private Friend mCurrentObject;
     private GestureDetector mGestureDetector;
     private Vec2D mCurrentTouch;
     private Vec2D mPreviousTouch;
@@ -95,10 +96,38 @@ public class DrawView extends View implements View.OnTouchListener {
         mRemaining = 20;
         mBase = new Base(mContext, new Vec2D(getWidth()/2, getHeight()+1300), 1400);
         mObjects.add(mBase);
-        stationaryObjects.add(mBase);
         //prepareFieldGrid();
         new AddEnemyTask().execute();
+        new SensorTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         postInvalidate();
+    }
+
+    private class SensorTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            while (!this.isCancelled()) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                synchronized (mObjects) {
+                    for (Entity e : mObjects) {
+                        if (e instanceof Sensors) {
+                            ((Sensors) e).setSensorTarget(StandardEnemyStrategy.getTarget(mObjects, e));
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+
+        }
     }
 
     private class AddEnemyTask extends AsyncTask<Void, Void, Void> {
@@ -131,8 +160,6 @@ public class DrawView extends View implements View.OnTouchListener {
         mCompleted.clear();
         fieldCells.clear();
         mObjects.clear();
-        movingObjects.clear();
-        stationaryObjects.clear();
     }
 
     private void prepareFieldGrid() {
@@ -170,30 +197,33 @@ public class DrawView extends View implements View.OnTouchListener {
 
     public void actionDown(Vec2D position) {
         if (!mStop) {
-            if (mCurrentObject != null) {
-                mCurrentObject.action(position);
-                mCurrentObject = null;
-            } else {
-                double touchRadius = 50;
-                boolean chosen = false;
-                for (Stationary s : stationaryObjects) {
-                    if (Vec2D.distance(position, s.getPosition()) - touchRadius - s.getRadius() <= 0) {
-                        mCurrentObject = s;
-                        chosen = true;
+            double touchRadius = 50;
+            boolean intersects = false;
+            synchronized (mObjects) {
+                for (Entity e : mObjects) {
+                    if (e instanceof Friend) {
+                        if (Vec2D.distance(position, e.getPosition()) - touchRadius - e.getRadius() <= 0) {
+                            mCurrentObject = (Friend) e;
+                            intersects = true;
+                        }
                     }
                 }
-                if (!chosen) {
-                    Tower stone = addTower(position);
-                    mCurrentObject = stone;
+            }
+            if (!intersects) {
+                if (mCurrentObject == null) {
+                    LaserTower tower = addLaserTower(position);
+                    mCurrentObject = tower;
+                    //GunTower stone = addGunTower(position);
+                    //mCurrentObject = stone;
+                } else {
+                    mCurrentObject.action(position);
+                    mCurrentObject = null;
                 }
             }
         }
     }
 
     public void actionUp() {
-        if (mCurrentObject != null) {
-            mCurrentObject.cancel();
-        }
         mCurrentTouch = null;
         mPreviousTouch = null;
     }
@@ -204,31 +234,24 @@ public class DrawView extends View implements View.OnTouchListener {
     public RedPoint addRedPoint(Vec2D position, Vec2D velocity, int mass) {
         RedPoint redPoint = new RedPoint(mContext, position, velocity, mass);
         mObjects.add(redPoint);
-        movingObjects.add(redPoint);
         return redPoint;
     }
 
-    public Tower addTower(Vec2D position) {
-        //tower.setGrowing(true);
-        Vec2D newPos;
-        for (Stationary s : stationaryObjects) {
-            if (Vec2D.distance(position, s.getPosition()) - Tower.DEFAULT_RADIUS - s.getRadius() <= 0) {
-//                newPos = Vec2D.diff(s.getPosition(), position);
-//                newPos.normalize(Tower.DEFAULT_RADIUS + s.getRadius());
-//                position = Vec2D.sum(s.getPosition(), newPos);
-            }
-        }
-        Tower tower = new Tower(mContext, position);
-        mObjects.add(tower);
-        stationaryObjects.add(tower);
-        return tower;
+    public GunTower addGunTower(Vec2D position) {
+        GunTower gunTower = new GunTower(mContext, position);
+        mAddObjects.add(gunTower);
+        return gunTower;
+    }
+
+    public LaserTower addLaserTower(Vec2D position) {
+        LaserTower laserTower = new LaserTower(mContext, position);
+        mAddObjects.add(laserTower);
+        return laserTower;
     }
 
     public Tank addTank(Vec2D position, Vec2D velocity) {
         Tank tank = new Tank(mContext, position, velocity);
-        tank.setSensors(mObjects);
-        mObjects.add(tank);
-        movingObjects.add(tank);
+        mAddObjects.add(tank);
         return tank;
     }
 
@@ -254,7 +277,7 @@ public class DrawView extends View implements View.OnTouchListener {
 
         drawObjects(canvas);
         drawInfo(canvas);
-
+//        drawAim(canvas);
         waitFrame();
         mFrameTime = System.currentTimeMillis();
         if (!mStop) {
@@ -264,23 +287,59 @@ public class DrawView extends View implements View.OnTouchListener {
 
     private void drawObjects(Canvas canvas) {
         for (Entity e : mObjects) {
-            if (e instanceof Moving) {
-                drawMoving((Moving) e, canvas);
+            ArrayList<Entity> projectiles = e.shoot();
+            if (projectiles != null) {
+                mAddObjects.addAll(projectiles);
             }
-            if (e instanceof Stationary) {
-                drawStationary((Stationary) e, canvas);
+            if (e.isStationary()) {
+                e.draw(canvas);
+                if (e == mCurrentObject) {
+                    linePaint.setColor(Color.YELLOW);
+                    linePaint.setStrokeWidth(10);
+                    linePaint.setStyle(Paint.Style.STROKE);
+                    float x = (float) e.getPosition().x;
+                    float y = (float) e.getPosition().y;
+                    float r = (float) e.getRadius() + 10;
+                    canvas.drawCircle(x, y, r, linePaint);
+                }
+            } else {
+                if (!e.isDead()) {
+                    for (Entity j : mObjects) {
+                        if (j.equals(e)) {
+                            continue;
+                        }
+                        if (j.isDead()) {
+                            continue;
+                        }
+                        if (!Collision.hasCollision(e, j)) {
+                            continue;
+                        }
+                        if (e instanceof Weapon || j instanceof Weapon) {
+                            e.hit();
+                            j.hit();
+                        } else {
+                            Vec2D contactVector = Collision.getContactVector(e, j);
+                            collision.setData(e, j, contactVector);
+                            e.setVelocity(collision.newV1);
+                            j.setVelocity(collision.newV2);
+                        }
+                    }
+                }
+                e.draw(canvas);
             }
         }
     }
 
     private void prepareObjects() {
-        ListIterator<Entity> iterator = mObjects.listIterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().isDelete()) {
-                iterator.remove();
+        synchronized (mObjects) {
+            ListIterator<Entity> iterator = mObjects.listIterator();
+            while (iterator.hasNext()) {
+                if (iterator.next().isDelete()) {
+                    iterator.remove();
+                }
             }
+            mObjects.addAll(mAddObjects);
         }
-        mObjects.addAll(mAddObjects);
         mAddObjects.clear();
     }
 
@@ -309,12 +368,12 @@ public class DrawView extends View implements View.OnTouchListener {
         m.draw(canvas);
     }
 
-    private void drawStationary(Stationary s, Canvas canvas) {
-        Moving m = s.shoot();
-        if (m != null) {
-            mAddObjects.add(m);
-        }
-        s.draw(canvas, mCurrentTouch);
+    private void drawStationary(Entity s, Canvas canvas) {
+//        Moving m = s.shoot();
+//        if (m != null) {
+//            mAddObjects.add(m);
+//        }
+        s.draw(canvas);
         if (s == mCurrentObject) {
             linePaint.setColor(Color.YELLOW);
             linePaint.setStrokeWidth(10);
@@ -366,8 +425,9 @@ public class DrawView extends View implements View.OnTouchListener {
             if (y < 0) y = 0;
             if (x > getWidth()) x = getWidth();
             if (y > getHeight()) y = getHeight();
-
             canvas.drawLine((float) mPreviousTouch.x, (float) mPreviousTouch.y, (float) x, (float) y, linePaint);
+//            Vec2D newVec = Vec2D.rotate(mPreviousTouch, new Vec2D(x, y), 90);
+//            canvas.drawLine((float) mPreviousTouch.x, (float) mPreviousTouch.y, (float) newVec.x, (float) newVec.y, linePaint);
         }
     }
 
