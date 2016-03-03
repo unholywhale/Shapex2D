@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 
 import com.whale.shapex2d.R;
+import com.whale.shapex2d.animations.Animations;
 import com.whale.shapex2d.geom.Vec2D;
 import com.whale.shapex2d.interfaces.Beam;
 import com.whale.shapex2d.interfaces.Entity;
@@ -24,6 +25,10 @@ public class Laser implements Entity, Beam {
     private double mLength;
     private double mAngle;
     private double mThickness;
+    private ArrayList<Drawable> mAnimation;
+    private int mAnimationCounter = 0;
+    private int mFrameCounter = 0;
+    private final int ANIM_FREQ = 5;
     private Drawable mDrawable;
     private int mCounter;
     private boolean isDelete;
@@ -43,7 +48,8 @@ public class Laser implements Entity, Beam {
         mLength = Vec2D.distance(start, end);
         mAngle = Vec2D.getAngle(start, end) - 90;
         mThickness = BEAM_THICKNESS;
-        mDrawable = context.getResources().getDrawable(R.drawable.laser_1);
+        mAnimation = Animations.INSTANCE.getAnimation(Animations.ANIM_RED_LASER);
+        mDrawable = mAnimation.get(mAnimationCounter);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -141,6 +147,17 @@ public class Laser implements Entity, Beam {
         mCounter++;
         if (mCounter % BEAM_LIFE == 0) {
             isDelete = true;
+        }
+        mFrameCounter++;
+        if (mFrameCounter % ANIM_FREQ == 0) {
+            try {
+                mDrawable = mAnimation.get(mAnimationCounter);
+                mAnimationCounter++;
+            } catch (IndexOutOfBoundsException e) {
+                mAnimationCounter = 0;
+                mDrawable = mAnimation.get(mAnimationCounter);
+                mAnimationCounter++;
+            }
         }
         int x = (int) mStart.x;
         int y = (int) mStart.y;

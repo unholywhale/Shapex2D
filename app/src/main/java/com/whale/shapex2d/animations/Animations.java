@@ -14,6 +14,7 @@ public enum Animations {
     INSTANCE;
     public static final String ANIM_EXPLOSION = "explosion_";
     public static final String ANIM_CIRCLE_EXPLOSION = "circleexplosion_";
+    public static final String ANIM_RED_LASER = "red_laser_";
 
     private Context mContext;
     private HashSet<ArrayList<Drawable>> mAnimations = new HashSet<>();
